@@ -26,6 +26,18 @@ describe('EvidenceREA CLI', () => {
     assert.ok(stdout.includes('Hotkey / Trigger'), 'should have pipeline steps');
   });
 
+  it('includes the module graph in markdown output', () => {
+    const stdout = runCli([FIXTURE, '--mode', 'pipeline', '--format', 'markdown']);
+    assert.ok(stdout.includes('## Module Graph'), 'markdown should carry the module inventory');
+    assert.ok(stdout.includes('resources/app/main/index.js'), 'should list scanned files');
+  });
+
+  it('exposes the package version in the envelope', () => {
+    const stdout = runCli([FIXTURE, '--mode', 'pipeline', '--format', 'json']);
+    const output = JSON.parse(stdout);
+    assert.strictEqual(output.envelope.version, require('../package.json').version);
+  });
+
   it('auto mode returns both maps', () => {
     const stdout = runCli([FIXTURE, '--mode', 'auto', '--format', 'json']);
     const output = JSON.parse(stdout);

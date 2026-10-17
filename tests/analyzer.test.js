@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { analyze, extractIpcChannels, detectGlobalShortcut, detectContextBridge } = require('../src/analyzer');
+const { analyze, extractIpcChannels, detectGlobalShortcut, detectContextBridge, detectFeatureAreas } = require('../src/analyzer');
 
 const FIXTURE = path.join(__dirname, '../fixtures/wispr-like/resources/app');
 
@@ -12,7 +12,50 @@ describe('EvidenceREA Analyzer', () => {
     it('finds all JS files in the fixture', () => {
       const envelope = analyze(FIXTURE);
       assert.ok(envelope.filesScanned >= 3, `expected at least 3 files, got ${envelope.filesScanned}`);
-      assert.ok(envelope.modules >= 3, `expected at least 3 modules, got ${envelope.modules}`);
+      assert.ok(envelope.modules.length >= 3, `expected at least 3 modules, got ${envelope.modules.length}`);
+      assert.ok(envelope.modules.every(m => typeof m.path === 'string' && typeof m.size === 'number'),
+        'each module entry should carry a relative path and size');
+    });
+
+    it('reports module sizes in bytes, not UTF-16 code units', () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-size-'));
+      const file = path.join(tmp, 'unicode.js');
+      fs.writeFileSync(file, 'const s = "你好 héllo";\n');
+
+      const envelope = analyze(tmp);
+      const mod = envelope.modules.find(m => m.path === 'unicode.js');
+      assert.ok(mod, 'should include the scanned file');
+      assert.strictEqual(mod.size, fs.statSync(file).size, 'size should be the on-disk byte length');
+
+      fs.rmSync(tmp, { recursive: true, force: true });
+    });
+
+    it('emits module paths in a deterministic, sorted order regardless of creation order', () => {
+      const t1 = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-order-a-'));
+      const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-order-b-'));
+      // Same content, files created in opposite orders and in nested dirs.
+      fs.writeFileSync(path.join(t1, 'zeta.js'), 'const z = 1;\n');
+      fs.mkdirSync(path.join(t1, 'alpha'));
+      fs.writeFileSync(path.join(t1, 'alpha', 'inner.js'), 'const i = 1;\n');
+      fs.writeFileSync(path.join(t1, 'beta.js'), 'const b = 1;\n');
+
+      fs.writeFileSync(path.join(t2, 'beta.js'), 'const b = 1;\n');
+      fs.writeFileSync(path.join(t2, 'zeta.js'), 'const z = 1;\n');
+      fs.mkdirSync(path.join(t2, 'alpha'));
+      fs.writeFileSync(path.join(t2, 'alpha', 'inner.js'), 'const i = 1;\n');
+
+      const pathsA = analyze(t1).modules.map(m => m.path);
+      const pathsB = analyze(t2).modules.map(m => m.path);
+      assert.deepStrictEqual(pathsA, pathsB, 'module order must not depend on readdir order');
+      assert.deepStrictEqual(pathsA, [...pathsA].sort(), 'module order should be sorted');
+      assert.deepStrictEqual(
+        analyze(t1).findings.map(f => f.claim),
+        analyze(t2).findings.map(f => f.claim),
+        'finding order must not depend on readdir order'
+      );
+
+      fs.rmSync(t1, { recursive: true, force: true });
+      fs.rmSync(t2, { recursive: true, force: true });
     });
 
     it('skips node_modules and dot-directories', () => {
@@ -115,17 +158,42 @@ describe('EvidenceREA Analyzer', () => {
     });
   });
 
+  describe('feature keyword detection', () => {
+    const long = (s) => s + '\n' + '// filler line\n'.repeat(30);
+
+    it('matches camelCase sync identifiers but not the async keyword', () => {
+      assert.strictEqual(detectFeatureAreas('onSyncProgress(cb)').sync, true);
+      assert.strictEqual(detectFeatureAreas('this.cloudSync = true').sync, true);
+      assert.strictEqual(detectFeatureAreas('const m = dataSyncManager').sync, true);
+      assert.strictEqual(detectFeatureAreas('async function run() {}').sync, undefined);
+    });
+
+    it('matches notes identifiers without matching the word denote', () => {
+      assert.strictEqual(detectFeatureAreas(long('renderMarkdown()')).notes, true);
+      assert.strictEqual(detectFeatureAreas(long('onNoteCreated()')).notes, true);
+      assert.strictEqual(detectFeatureAreas(long('this will denote nothing')).notes, undefined);
+    });
+  });
+
   describe('envelope structure', () => {
-    it('has provider, target, timestamp, filesScanned, ipcChannels, findings, limitations', () => {
+    it('has provider, target, filesScanned, ipcChannels, findings, limitations', () => {
       const envelope = analyze(FIXTURE);
       assert.strictEqual(envelope.provider, 'evidencerea-static');
       assert.strictEqual(envelope.target, FIXTURE);
-      assert.ok(envelope.timestamp, 'timestamp required');
       assert.ok(typeof envelope.filesScanned === 'number');
       assert.ok(Array.isArray(envelope.ipcChannels));
       assert.ok(Array.isArray(envelope.findings));
       assert.ok(Array.isArray(envelope.limitations));
       assert.ok(envelope.limitations.length > 0, 'should have global limitations');
+    });
+
+    it('reports the package version rather than a hardcoded literal', () => {
+      const envelope = analyze(FIXTURE);
+      assert.strictEqual(envelope.version, require('../package.json').version);
+    });
+
+    it('produces identical output for the same input', () => {
+      assert.deepStrictEqual(analyze(FIXTURE), analyze(FIXTURE));
     });
   });
 });

@@ -16,7 +16,8 @@ Both modes produce consistent evidence envelopes and feature maps.
 - Accept a path to an Electron app directory (extracted or source tree)
 - Recursively walk all `.js`, `.mjs`, `.cjs`, `.ts`, `.tsx` files
 - Skip `node_modules` and dot-directories
-- Output file list with relative paths and sizes
+- Output file list with relative paths and byte sizes, sorted so identical
+  input always produces identical output (JSON envelope + Markdown table)
 
 ### FR2: IPC Channel Extraction
 
@@ -36,7 +37,10 @@ Every finding must include:
 - `evidence` — array of file paths, symbols, channel names
 - `confidence` — `high` | `medium` | `low`
 - `limitations` — array of explicit unknowns
+
+The envelope wrapping each analysis run must include:
 - `provider` — identifier for the analysis mode
+- `version` — analyzer version, derived from `package.json`
 
 ### FR4: Pipeline Reconstruction Mode
 
@@ -72,7 +76,7 @@ Every finding must include:
 
 - `node src/cli.js <path> [--mode pipeline|features|auto] [--format json|markdown|both]`
 - Exit 0 on success, non-zero on error
-- Print JSON to stdout, Markdown to stderr (or both to stdout with `--format both`)
+- `--format both` (default): print JSON to stdout and Markdown to stderr; `--format json` or `--format markdown` print only that format to stdout
 
 ### FR8: Fixture Mode
 

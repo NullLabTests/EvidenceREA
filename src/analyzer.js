@@ -9,14 +9,21 @@
 
 const fs = require('fs');
 const path = require('path');
+const { version } = require('../package.json');
 
 /**
  * Recursively walk a directory for JS/TS files.
  * Skips node_modules and dot-directories.
+ *
+ * Directory entries are sorted by name so traversal order — and therefore the
+ * emitted module/finding/feature order — never depends on the filesystem's
+ * readdir order. Same input, same output.
  */
 function walk(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
@@ -63,12 +70,25 @@ function detectContextBridge(content) {
 }
 
 /**
+ * Match a feature keyword when it starts a word or a camelCase identifier
+ * segment (`onSyncProgress`, `cloudSync`, `renderMarkdown`) without matching
+ * incidental substrings (`async`, `denote`).
+ */
+function keywordHit(content, ...stems) {
+  return stems.some(stem => {
+    const tail = stem.slice(1);
+    return new RegExp(`\\b${stem}`, 'i').test(content)
+      || new RegExp(`[a-z0-9]${stem[0].toUpperCase()}${tail}`).test(content);
+  });
+}
+
+/**
  * Detect feature-area keywords in content.
  */
 function detectFeatureAreas(content) {
   const areas = {};
-  if (/note|notebook|markdown/i.test(content) && content.length > 200) areas.notes = true;
-  if (/sync|synchronis|dropbox|onedrive|webdav/i.test(content)) areas.sync = true;
+  if (content.length > 200 && keywordHit(content, 'note', 'notebook', 'markdown')) areas.notes = true;
+  if (keywordHit(content, 'sync', 'dropbox', 'onedrive', 'webdav')) areas.sync = true;
   if (/encrypt|e2ee|masterKey|cipher/i.test(content)) areas.encryption = true;
   if (/plugin|PluginService|registerPlugin/i.test(content)) areas.plugins = true;
   return areas;
@@ -98,7 +118,7 @@ function analyze(appRoot) {
 
     modules.push({
       path: rel,
-      size: content.length,
+      size: Buffer.byteLength(content, 'utf8'),
       hasIpc: channels.length > 0,
       channels,
     });
@@ -187,12 +207,11 @@ function analyze(appRoot) {
   }
 
   const envelope = {
+    version,
     provider: 'evidencerea-static',
-    version: '2.0.0',
     target: appRoot,
-    timestamp: new Date().toISOString(),
     filesScanned: files.length,
-    modules: modules.length,
+    modules,
     ipcChannels: Array.from(allChannels).sort(),
     findings,
     featureHits: {
