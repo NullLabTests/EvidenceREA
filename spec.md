@@ -58,6 +58,7 @@ Every finding must include:
   - Electron IPC usage
   - contextBridge / preload exposure
 - Generate per-area findings with file citations
+- Include summary counts for each area
 
 ### FR6: Dual Mode Support
 

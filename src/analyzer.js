@@ -1,7 +1,10 @@
 /**
- * EvidenceREA Unified Analyzer
+ * EvidenceREA Unified Analyzer v2
  * Static analysis of Electron application directories.
  * Produces evidence envelopes. Does not execute target code.
+ *
+ * Combines patterns from FlowREA (pipeline reconstruction) and
+ * JoplinREA (feature-area detection) into one unified walker.
  */
 
 const fs = require('fs');
@@ -185,6 +188,7 @@ function analyze(appRoot) {
 
   const envelope = {
     provider: 'evidencerea-static',
+    version: '2.0.0',
     target: appRoot,
     timestamp: new Date().toISOString(),
     filesScanned: files.length,

@@ -21,6 +21,7 @@ A single polished, git-tracked repository called **EvidenceREA** that:
 - Follows the AI-native SDLC (Anthropic-style) with versioned artifacts
 - Ships with comprehensive tests that pass for both analysis styles
 - Outputs machine-readable JSON + human-readable Markdown
+- Serves as a template for analyzing other Electron applications
 
 ## Users
 

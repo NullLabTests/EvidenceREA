@@ -1,4 +1,4 @@
-# Implementation Plan: EvidenceREA
+# Implementation Plan: EvidenceREA v2
 
 ## Goal
 
@@ -6,7 +6,7 @@ Deliver a working, tested Node.js CLI and library that unifies evidence-backed s
 
 ## Files to Create
 
-1. `package.json` — project metadata, scripts, no external deps
+1. `package.json` — project metadata, scripts, no external deps, v2.0.0
 2. `src/analyzer.js` — unified walker, IPC extraction, evidence envelopes
 3. `src/feature-map.js` — dual-mode feature map generator
 4. `src/cli.js` — command-line entry with mode/format flags
