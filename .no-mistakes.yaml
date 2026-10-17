@@ -1,0 +1,11 @@
+# no-mistakes repository configuration.
+#
+# EvidenceREA intentionally has no CI: there is no .github/workflows
+# configured, so no checks ever register on a pull request. Without this
+# declaration the no-mistakes CI monitor cannot treat an empty check list as
+# passing and waits for checks that will never appear.
+#
+# `no_ci` is a readiness boundary and is honored ONLY from this trusted
+# default-branch copy of the file, so a pushed branch cannot self-declare
+# no-CI to bypass checks. If CI is added later, remove this declaration.
+no_ci: true
