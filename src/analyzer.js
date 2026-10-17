@@ -68,7 +68,7 @@ function detectContextBridge(content) {
 function detectFeatureAreas(content) {
   const areas = {};
   if (/note|notebook|markdown/i.test(content) && content.length > 200) areas.notes = true;
-  if (/sync|synchronis|dropbox|onedrive|webdav/i.test(content)) areas.sync = true;
+  if (/\bsync|dropbox|onedrive|webdav/i.test(content)) areas.sync = true;
   if (/encrypt|e2ee|masterKey|cipher/i.test(content)) areas.encryption = true;
   if (/plugin|PluginService|registerPlugin/i.test(content)) areas.plugins = true;
   return areas;
@@ -192,7 +192,7 @@ function analyze(appRoot) {
     target: appRoot,
     timestamp: new Date().toISOString(),
     filesScanned: files.length,
-    modules: modules.length,
+    modules,
     ipcChannels: Array.from(allChannels).sort(),
     findings,
     featureHits: {

@@ -12,7 +12,9 @@ describe('EvidenceREA Analyzer', () => {
     it('finds all JS files in the fixture', () => {
       const envelope = analyze(FIXTURE);
       assert.ok(envelope.filesScanned >= 3, `expected at least 3 files, got ${envelope.filesScanned}`);
-      assert.ok(envelope.modules >= 3, `expected at least 3 modules, got ${envelope.modules}`);
+      assert.ok(envelope.modules.length >= 3, `expected at least 3 modules, got ${envelope.modules.length}`);
+      assert.ok(envelope.modules.every(m => typeof m.path === 'string' && typeof m.size === 'number'),
+        'each module entry should carry a relative path and size');
     });
 
     it('skips node_modules and dot-directories', () => {
