@@ -104,8 +104,8 @@ EvidenceREA/
 ├── fixtures/
 │   └── wispr-like/       # Synthetic Electron app fixture (main + preload + renderer)
 ├── tests/
-│   ├── analyzer.test.js  # 12 analyzer unit tests
-│   ├── feature-map.test.js # 9 feature map tests
+│   ├── analyzer.test.js  # 13 analyzer unit tests
+│   ├── feature-map.test.js # 8 feature map tests
 │   └── cli.test.js       # 7 CLI integration tests
 ├── intent.md             # SDLC: problem, desired outcome, users, constraints
 ├── spec.md               # SDLC: functional requirements (FR1–FR8)
