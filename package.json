@@ -1,0 +1,23 @@
+{
+  "name": "evidencerea",
+  "version": "1.0.0",
+  "description": "Unified evidence-backed static analyzer for Electron applications",
+  "main": "src/cli.js",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'",
+    "analyze": "node src/cli.js"
+  },
+  "keywords": [
+    "electron",
+    "static-analysis",
+    "reverse-engineering",
+    "evidence",
+    "security",
+    "clean-room"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

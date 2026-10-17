@@ -1,0 +1,6 @@
+{
+  "name": "wispr-like-fixture",
+  "version": "1.0.0",
+  "main": "main/index.js",
+  "description": "Synthetic fixture for testing EvidenceREA analyzer. Not a real application."
+}
