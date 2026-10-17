@@ -63,12 +63,25 @@ function detectContextBridge(content) {
 }
 
 /**
+ * Match a feature keyword when it starts a word or a camelCase identifier
+ * segment (`onSyncProgress`, `cloudSync`, `renderMarkdown`) without matching
+ * incidental substrings (`async`, `denote`).
+ */
+function keywordHit(content, ...stems) {
+  return stems.some(stem => {
+    const tail = stem.slice(1);
+    return new RegExp(`\\b${stem}`, 'i').test(content)
+      || new RegExp(`[a-z0-9]${stem[0].toUpperCase()}${tail}`).test(content);
+  });
+}
+
+/**
  * Detect feature-area keywords in content.
  */
 function detectFeatureAreas(content) {
   const areas = {};
-  if (/note|notebook|markdown/i.test(content) && content.length > 200) areas.notes = true;
-  if (/\bsync|dropbox|onedrive|webdav/i.test(content)) areas.sync = true;
+  if (content.length > 200 && keywordHit(content, 'note', 'notebook', 'markdown')) areas.notes = true;
+  if (keywordHit(content, 'sync', 'dropbox', 'onedrive', 'webdav')) areas.sync = true;
   if (/encrypt|e2ee|masterKey|cipher/i.test(content)) areas.encryption = true;
   if (/plugin|PluginService|registerPlugin/i.test(content)) areas.plugins = true;
   return areas;
@@ -98,7 +111,7 @@ function analyze(appRoot) {
 
     modules.push({
       path: rel,
-      size: content.length,
+      size: Buffer.byteLength(content, 'utf8'),
       hasIpc: channels.length > 0,
       channels,
     });
@@ -188,9 +201,7 @@ function analyze(appRoot) {
 
   const envelope = {
     provider: 'evidencerea-static',
-    version: '2.0.0',
     target: appRoot,
-    timestamp: new Date().toISOString(),
     filesScanned: files.length,
     modules,
     ipcChannels: Array.from(allChannels).sort(),

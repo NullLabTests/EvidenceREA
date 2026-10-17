@@ -24,7 +24,7 @@ EvidenceREA scans an Electron application's source tree and produces:
 | **Evidence envelopes** | Every finding has `claim`, `evidence`, `confidence`, and `limitations` |
 | **Pipeline reconstruction** | Step-by-step feature path maps (e.g., hotkey → dictation → injection) |
 | **Feature-area detection** | Broad area detection (notes, sync, plugins, encryption, IPC) |
-| **Module graph** | Structured inventory of all JS/TS files with IPC channel tags |
+| **Module graph** | Structured JSON inventory of all JS/TS files with IPC channel tags |
 | **Markdown + JSON** | Human-readable reports and machine-parseable envelopes |
 
 All output is deterministic, local, and useful as input to a coding agent.

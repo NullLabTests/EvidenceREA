@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { analyze, extractIpcChannels, detectGlobalShortcut, detectContextBridge } = require('../src/analyzer');
+const { analyze, extractIpcChannels, detectGlobalShortcut, detectContextBridge, detectFeatureAreas } = require('../src/analyzer');
 
 const FIXTURE = path.join(__dirname, '../fixtures/wispr-like/resources/app');
 
@@ -15,6 +15,19 @@ describe('EvidenceREA Analyzer', () => {
       assert.ok(envelope.modules.length >= 3, `expected at least 3 modules, got ${envelope.modules.length}`);
       assert.ok(envelope.modules.every(m => typeof m.path === 'string' && typeof m.size === 'number'),
         'each module entry should carry a relative path and size');
+    });
+
+    it('reports module sizes in bytes, not UTF-16 code units', () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-size-'));
+      const file = path.join(tmp, 'unicode.js');
+      fs.writeFileSync(file, 'const s = "你好 héllo";\n');
+
+      const envelope = analyze(tmp);
+      const mod = envelope.modules.find(m => m.path === 'unicode.js');
+      assert.ok(mod, 'should include the scanned file');
+      assert.strictEqual(mod.size, fs.statSync(file).size, 'size should be the on-disk byte length');
+
+      fs.rmSync(tmp, { recursive: true, force: true });
     });
 
     it('skips node_modules and dot-directories', () => {
@@ -117,17 +130,37 @@ describe('EvidenceREA Analyzer', () => {
     });
   });
 
+  describe('feature keyword detection', () => {
+    const long = (s) => s + '\n' + '// filler line\n'.repeat(30);
+
+    it('matches camelCase sync identifiers but not the async keyword', () => {
+      assert.strictEqual(detectFeatureAreas('onSyncProgress(cb)').sync, true);
+      assert.strictEqual(detectFeatureAreas('this.cloudSync = true').sync, true);
+      assert.strictEqual(detectFeatureAreas('const m = dataSyncManager').sync, true);
+      assert.strictEqual(detectFeatureAreas('async function run() {}').sync, undefined);
+    });
+
+    it('matches notes identifiers without matching the word denote', () => {
+      assert.strictEqual(detectFeatureAreas(long('renderMarkdown()')).notes, true);
+      assert.strictEqual(detectFeatureAreas(long('onNoteCreated()')).notes, true);
+      assert.strictEqual(detectFeatureAreas(long('this will denote nothing')).notes, undefined);
+    });
+  });
+
   describe('envelope structure', () => {
-    it('has provider, target, timestamp, filesScanned, ipcChannels, findings, limitations', () => {
+    it('has provider, target, filesScanned, ipcChannels, findings, limitations', () => {
       const envelope = analyze(FIXTURE);
       assert.strictEqual(envelope.provider, 'evidencerea-static');
       assert.strictEqual(envelope.target, FIXTURE);
-      assert.ok(envelope.timestamp, 'timestamp required');
       assert.ok(typeof envelope.filesScanned === 'number');
       assert.ok(Array.isArray(envelope.ipcChannels));
       assert.ok(Array.isArray(envelope.findings));
       assert.ok(Array.isArray(envelope.limitations));
       assert.ok(envelope.limitations.length > 0, 'should have global limitations');
+    });
+
+    it('produces identical output for the same input', () => {
+      assert.deepStrictEqual(analyze(FIXTURE), analyze(FIXTURE));
     });
   });
 });
