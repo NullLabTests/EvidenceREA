@@ -24,7 +24,7 @@ EvidenceREA scans an Electron application's source tree and produces:
 | **Evidence envelopes** | Every finding has `claim`, `evidence`, `confidence`, and `limitations` |
 | **Pipeline reconstruction** | Step-by-step feature path maps (e.g., hotkey → dictation → injection) |
 | **Feature-area detection** | Broad area detection (notes, sync, plugins, encryption, IPC) |
-| **Module graph** | Structured JSON inventory of all JS/TS files with IPC channel tags |
+| **Module graph** | Structured inventory of all JS/TS files with IPC channel tags (JSON envelope + Markdown table) |
 | **Markdown + JSON** | Human-readable reports and machine-parseable envelopes |
 
 All output is deterministic, local, and useful as input to a coding agent.
@@ -65,7 +65,7 @@ Point it at any open-source Electron app (e.g., a Joplin clone) to get instant f
 git clone https://github.com/nulllabTests/EvidenceREA.git
 cd EvidenceREA
 
-# Run tests (28 tests, all passing)
+# Run tests (38 tests, all passing)
 npm test
 
 # Analyze the synthetic fixture (pipeline mode)
@@ -104,9 +104,9 @@ EvidenceREA/
 ├── fixtures/
 │   └── wispr-like/       # Synthetic Electron app fixture (main + preload + renderer)
 ├── tests/
-│   ├── analyzer.test.js  # 13 analyzer unit tests
-│   ├── feature-map.test.js # 8 feature map tests
-│   └── cli.test.js       # 7 CLI integration tests
+│   ├── analyzer.test.js  # 19 analyzer unit tests
+│   ├── feature-map.test.js # 10 feature map tests
+│   └── cli.test.js       # 9 CLI integration tests
 ├── intent.md             # SDLC: problem, desired outcome, users, constraints
 ├── spec.md               # SDLC: functional requirements (FR1–FR8)
 ├── plan.md               # SDLC: implementation order, risks, success criteria
@@ -180,7 +180,7 @@ This repo follows the [AI-Native SDLC playbook](https://claude.com/blog/the-ai-n
 | Plan | `intent.md` — problem, desired outcome, users, constraints |
 | Design | `spec.md` — functional requirements |
 | Build | `plan.md` — implementation order |
-| Test | `tests/` — 28 comprehensive, passing tests |
+| Test | `tests/` — 38 comprehensive, passing tests |
 | Review | Evidence envelopes with confidence levels |
 | Maintain | Versioned artifacts, git history |
 

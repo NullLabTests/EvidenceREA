@@ -88,8 +88,8 @@ function main() {
       : args.mode === 'features' ? buildFeatureAreaMap(envelope)
       : buildAllMaps(envelope);
     const md = args.mode === 'auto'
-      ? toMarkdown(map.pipeline) + '\n\n' + toMarkdown(map.features)
-      : toMarkdown(map);
+      ? toMarkdown(map.pipeline, envelope.modules) + '\n\n' + toMarkdown(map.features)
+      : toMarkdown(map, envelope.modules);
     if (args.format === 'both') {
       console.error('\n--- Feature Map (Markdown) ---\n');
       console.error(md);

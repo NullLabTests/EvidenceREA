@@ -9,14 +9,21 @@
 
 const fs = require('fs');
 const path = require('path');
+const { version } = require('../package.json');
 
 /**
  * Recursively walk a directory for JS/TS files.
  * Skips node_modules and dot-directories.
+ *
+ * Directory entries are sorted by name so traversal order — and therefore the
+ * emitted module/finding/feature order — never depends on the filesystem's
+ * readdir order. Same input, same output.
  */
 function walk(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
@@ -200,6 +207,7 @@ function analyze(appRoot) {
   }
 
   const envelope = {
+    version,
     provider: 'evidencerea-static',
     target: appRoot,
     filesScanned: files.length,

@@ -30,6 +30,34 @@ describe('EvidenceREA Analyzer', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     });
 
+    it('emits module paths in a deterministic, sorted order regardless of creation order', () => {
+      const t1 = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-order-a-'));
+      const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-order-b-'));
+      // Same content, files created in opposite orders and in nested dirs.
+      fs.writeFileSync(path.join(t1, 'zeta.js'), 'const z = 1;\n');
+      fs.mkdirSync(path.join(t1, 'alpha'));
+      fs.writeFileSync(path.join(t1, 'alpha', 'inner.js'), 'const i = 1;\n');
+      fs.writeFileSync(path.join(t1, 'beta.js'), 'const b = 1;\n');
+
+      fs.writeFileSync(path.join(t2, 'beta.js'), 'const b = 1;\n');
+      fs.writeFileSync(path.join(t2, 'zeta.js'), 'const z = 1;\n');
+      fs.mkdirSync(path.join(t2, 'alpha'));
+      fs.writeFileSync(path.join(t2, 'alpha', 'inner.js'), 'const i = 1;\n');
+
+      const pathsA = analyze(t1).modules.map(m => m.path);
+      const pathsB = analyze(t2).modules.map(m => m.path);
+      assert.deepStrictEqual(pathsA, pathsB, 'module order must not depend on readdir order');
+      assert.deepStrictEqual(pathsA, [...pathsA].sort(), 'module order should be sorted');
+      assert.deepStrictEqual(
+        analyze(t1).findings.map(f => f.claim),
+        analyze(t2).findings.map(f => f.claim),
+        'finding order must not depend on readdir order'
+      );
+
+      fs.rmSync(t1, { recursive: true, force: true });
+      fs.rmSync(t2, { recursive: true, force: true });
+    });
+
     it('skips node_modules and dot-directories', () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'evrea-test-'));
       fs.mkdirSync(path.join(tmp, 'node_modules', 'dep'), { recursive: true });
@@ -157,6 +185,11 @@ describe('EvidenceREA Analyzer', () => {
       assert.ok(Array.isArray(envelope.findings));
       assert.ok(Array.isArray(envelope.limitations));
       assert.ok(envelope.limitations.length > 0, 'should have global limitations');
+    });
+
+    it('reports the package version rather than a hardcoded literal', () => {
+      const envelope = analyze(FIXTURE);
+      assert.strictEqual(envelope.version, require('../package.json').version);
     });
 
     it('produces identical output for the same input', () => {
